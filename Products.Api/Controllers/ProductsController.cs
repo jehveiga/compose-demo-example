@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
+using NuGet.Versioning;
 using Products.Api.Data;
 using Products.Api.Dtos.Requests;
 using Products.Api.Dtos.Responses;
@@ -36,9 +38,17 @@ namespace Products.Api.Controllers
 
         // GET: api/Products/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<ProductResponse>> GetProduct(Guid id)
+        public async Task<ActionResult<ProductResponse>> GetProduct(Guid id, IDistributedCache cache)
         {
-            var product = await _context.Products.FindAsync(id);
+            var product = await cache.GetAsync($"products-{id}", 
+                async token =>
+                {
+                    var product = await _context.Products.AsNoTracking()
+                                                   .FirstOrDefaultAsync(p => p.Id == id, token);
+
+                    return product;
+                }, 
+                CacheOptions.DefaultExpiration);
 
             if (product == null)
             {
@@ -52,7 +62,7 @@ namespace Products.Api.Controllers
 
         // PUT: api/Products/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutProduct(Guid id, UpdateProductRequest productRequest)
+        public async Task<IActionResult> PutProduct(Guid id, UpdateProductRequest productRequest, IDistributedCache cache)
         {
             var product = await _context.Products.FindAsync(id);
 
@@ -66,6 +76,8 @@ namespace Products.Api.Controllers
             _context.Entry(product).State = EntityState.Modified;
 
             await _context.SaveChangesAsync();
+
+            await cache.RemoveAsync($"products-{id}");
 
             return NoContent();
         }
@@ -86,7 +98,7 @@ namespace Products.Api.Controllers
 
         // DELETE: api/Products/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteProduct(Guid id)
+        public async Task<IActionResult> DeleteProduct(Guid id, IDistributedCache cache)
         {
             var product = await _context.Products.FindAsync(id);
             if (product == null)
@@ -96,6 +108,8 @@ namespace Products.Api.Controllers
 
             _context.Products.Remove(product);
             await _context.SaveChangesAsync();
+
+            await cache.RemoveAsync($"products-{id}");
 
             return NoContent();
         }

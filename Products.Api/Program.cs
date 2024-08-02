@@ -14,6 +14,10 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(
     options => options.UseNpgsql(builder.Configuration.GetConnectionString("Database")));
 
+// Adicionando serviço de cache a aplicação com Redis
+builder.Services.AddStackExchangeRedisCache(options =>
+    options.Configuration = builder.Configuration.GetConnectionString("Cache"));
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
