@@ -14,5 +14,11 @@ namespace Products.Api.Entities
         public Guid Id { get; private set; }
         public string Name { get; private set; }
         public decimal Price { get; private set; }
+
+        public void AtualizarProduto(string name, decimal price)
+        {
+            Name = name;
+            Price = price;
+        }
     }
 }

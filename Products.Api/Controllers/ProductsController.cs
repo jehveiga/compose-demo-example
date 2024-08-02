@@ -54,25 +54,18 @@ namespace Products.Api.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutProduct(Guid id, UpdateProductRequest productRequest)
         {
-            var product = productRequest.ToEntity();
+            var product = await _context.Products.FindAsync(id);
+
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            product.AtualizarProduto(productRequest.Name, productRequest.Price);
 
             _context.Entry(product).State = EntityState.Modified;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ProductExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
@@ -105,11 +98,6 @@ namespace Products.Api.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        private bool ProductExists(Guid id)
-        {
-            return _context.Products.Any(e => e.Id == id);
         }
     }
 }
