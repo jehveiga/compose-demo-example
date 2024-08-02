@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
-using NuGet.Versioning;
 using Products.Api.Data;
 using Products.Api.Dtos.Requests;
 using Products.Api.Dtos.Responses;
@@ -40,14 +34,14 @@ namespace Products.Api.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<ProductResponse>> GetProduct(Guid id, IDistributedCache cache)
         {
-            var product = await cache.GetAsync($"products-{id}", 
+            var product = await cache.GetAsync($"products-{id}",
                 async token =>
                 {
                     var product = await _context.Products.AsNoTracking()
                                                    .FirstOrDefaultAsync(p => p.Id == id, token);
 
                     return product;
-                }, 
+                },
                 CacheOptions.DefaultExpiration);
 
             if (product == null)
